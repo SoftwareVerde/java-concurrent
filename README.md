@@ -1,4 +1,4 @@
-# Java Async Utilit Classes
+# Java Async Utility Classes
 
 Miscellaneous java async utility/convenience classes.
 
