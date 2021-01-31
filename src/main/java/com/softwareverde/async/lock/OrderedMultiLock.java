@@ -18,10 +18,6 @@ public class OrderedMultiLock<T> implements MultiLock<T> {
     }
 
     public void lock(final T... requiredObjects) {
-//        synchronized (System.out) {
-//            System.out.println(Thread.currentThread().getId() + " requesting to lock: " + requiredObjects.length + " objects.");
-//        }
-
         final List<T> sortedRequiredObjects = Arrays.asList(requiredObjects);
         Collections.sort(sortedRequiredObjects, _comparator);
 
@@ -36,10 +32,6 @@ public class OrderedMultiLock<T> implements MultiLock<T> {
         for (final T requiredObject : sortedRequiredObjects) {
             final ReentrantLock lock = _lockedItems.get(requiredObject);
             lock.lock();
-
-//            synchronized (System.out) {
-//                System.out.println(Thread.currentThread().getId() + " locked object " + (requiredObject));
-//            }
         }
     }
 
@@ -52,10 +44,6 @@ public class OrderedMultiLock<T> implements MultiLock<T> {
                 final ReentrantLock lock = _lockedItems.get(releasedObject);
                 if (lock.isHeldByCurrentThread()) {
                     lock.unlock();
-
-//                    synchronized (System.out) {
-//                        System.out.println(Thread.currentThread().getId() + " unlocked object " + (releasedObject));
-//                    }
                 }
             }
         }

@@ -1,13 +1,8 @@
 package com.softwareverde.async.lock;
 
-import com.softwareverde.logging.Logger;
-import com.softwareverde.logging.LoggerInstance;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IndexLock {
-    protected static final LoggerInstance _logger = Logger.getInstance(IndexLock.class);
-
     protected static long getThreadId() {
         final Thread thread = Thread.currentThread();
         return thread.getId();
@@ -35,10 +30,8 @@ public class IndexLock {
 
     public void lock(final int index) {
         final long threadId = IndexLock.getThreadId();
-        _logger.debug("Thread " + threadId + " locking " + index + ".");
 
         while (! _tryLock(index)) {
-            _logger.debug("Thread " + threadId + " waiting for lock " + index + ".");
             synchronized (_pin) {
                 try {
                     _pin.wait();
@@ -48,13 +41,10 @@ public class IndexLock {
                 }
             }
         }
-
-        _logger.debug("Thread " + threadId + " acquired lock " + index + ".");
     }
 
     public void unlock(final int index) {
         final long threadId = IndexLock.getThreadId();
-        _logger.debug("Thread " + threadId + " unlocking " + index + ".");
 
         _indexLocks[index].compareAndSet(threadId, 0L);
 
