@@ -1,5 +1,5 @@
 group 'com.softwareverde'
-version '0.3.1'
+version '1.0.0'
 
 apply plugin: 'java'
 apply plugin: 'java-library'
@@ -8,8 +8,8 @@ sourceCompatibility = 1.8
 
 task makeJar(type: Jar) {
     manifest {
-        attributes  'Implementation-Title': 'Java Async Util',
-                    'Implementation-Version': version
+        attributes  'Implementation-Title': 'Java Concurrent Util',
+                    'Implementation-Version': archiveVersion
     }
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
@@ -21,7 +21,8 @@ repositories {
 }
 
 dependencies {
-    implementation      group: 'com.github.softwareverde',  name: 'java-logging',   version: 'v1.0.4'
+    implementation  group: 'com.github.softwareverde',  name: 'java-logging',   version: 'v2.2.0'
+    implementation  group: 'com.github.softwareverde',  name: 'java-util',      version: 'v2.7.1'
 
     testImplementation  group: 'junit',                     name: 'junit',          version: '4.11'
 }
@@ -34,7 +35,7 @@ tasks.withType(Test) {
         exceptionFormat "full"
         showCauses true
         showStackTraces true
-        showStandardStreams true
+        showStandardStreams false
 
         // set options for log level DEBUG and INFO
         debug {
