@@ -2,6 +2,8 @@ package com.softwareverde.concurrent.service;
 
 import com.softwareverde.logging.Logger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public abstract class SleepyService {
     public enum Status {
         ACTIVE, SLEEPING, STOPPED
@@ -11,14 +13,13 @@ public abstract class SleepyService {
         Status getStatus();
     }
 
-    private final Object _monitor = new Object();
     private final Runnable _coreRunnable;
     private final StatusMonitor _statusMonitor;
 
     protected Long _stopTimeoutMs = 10000L;
     protected volatile Status _status = Status.STOPPED;
 
-    private volatile Boolean _shouldRestart = false;
+    private final AtomicBoolean _shouldRestart = new AtomicBoolean(false);
     private Thread _thread = null;
 
     private void _startThread() {
@@ -49,8 +50,7 @@ public abstract class SleepyService {
     protected void _loop() {
         final Thread thread = Thread.currentThread();
         while (! thread.isInterrupted()) {
-            if (_shouldRestart) {
-                _shouldRestart = false;
+            if (_shouldRestart.compareAndSet(true, false)) {
                 try {
                     _onStart();
                     while (! thread.isInterrupted()) {
@@ -78,14 +78,14 @@ public abstract class SleepyService {
                 _onSleep();
             }
 
-            while ( (! _shouldRestart) && (! thread.isInterrupted()) ) {
-                try {
-                    synchronized (_monitor) {
-                        _monitor.wait();
+            synchronized (_shouldRestart) {
+                while ( (! _shouldRestart.get()) && (! thread.isInterrupted()) ) {
+                    try {
+                        _shouldRestart.wait();
                     }
-                }
-                catch (final InterruptedException exception) {
-                    thread.interrupt();
+                    catch (final InterruptedException exception) {
+                        thread.interrupt();
+                    }
                 }
             }
         }
@@ -115,8 +115,8 @@ public abstract class SleepyService {
                         if (! thread.isInterrupted()) {
                             // Briefly sleep in order to avoid rapidly loop in the case of an exception.
                             try {
-                                synchronized (_monitor) {
-                                    _monitor.wait(1000);
+                                synchronized (_shouldRestart) {
+                                    _shouldRestart.wait(1000);
                                 }
                             }
                             catch (final Exception ignored) {
@@ -132,7 +132,7 @@ public abstract class SleepyService {
     }
 
     public synchronized void start() {
-        _shouldRestart = true;
+        _shouldRestart.set(true);
 
         if (_thread == null) {
             _startThread();
@@ -140,16 +140,15 @@ public abstract class SleepyService {
     }
 
     public synchronized void wakeUp() {
-        _shouldRestart = true;
-
-        synchronized (_monitor) {
-            _monitor.notify();
+        synchronized (_shouldRestart) {
+            _shouldRestart.set(true);
+            _shouldRestart.notify();
         }
     }
 
     public synchronized void stop() {
         if (_thread != null) {
-            _shouldRestart = false;
+            _shouldRestart.set(false);
 
             _thread.interrupt();
             try {
